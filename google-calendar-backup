@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+#
+# backs up multiple google calendars private icals via wget
+#
+# Geoffrey Huntley <ghuntley@ghuntley.com>
+# https://github.com/ghuntley/google-calendar-backup
+
+### Backup destination, jim!
+BACKUPDIR=~/.gcal-archive
+
+### Google Calendar Addresses ###
+read -r -d '' URLS <<'END'
+    #######################################################################################################################
+    # name | google private ical URL
+    #######################################################################################################################
+    main|http://www.google.com/calendar/ical/ghuntley%40ghuntley.com/private-snip-snip/basic.ics
+    finance|http://www.google.com/calendar/ical/ghuntley%40ghuntley.com/private-snip-snip/basic.ics
+END
+
+### functions
+function pidCheck {
+    BASENAME=$(basename $0)
+    PIDFILE=/tmp/$(basename $0).pid
+    if [ -e $PIDFILE ]; then
+        PID=`cat $PIDFILE`
+        if kill -0 &>1 > /dev/null $PID; 
+            then
+                echo "${BASENAME}: is already running, exiting..."
+                exit 1
+            else
+                rm $PIDFILE
+            fi
+        fi
+    echo $$ > $PIDFILE
+}
+ 
+#### main Main MAIN
+pidCheck
+ 
+mkdir -p $BACKUPDIR/
+cd $BACKUPDIR/
+
+# readline by line $URL
+# skip all comments
+# convert seperator (|) to single space
+# split {name}|{url} into $0 and $1
+# wget url={0} output={1}.ics
+echo "$URLS" | grep -v "#" | tr '|' ' ' | while read filename url; 
+do
+    wget -c --no-check-certificate "$url" -O "$filename".ics -o /dev/null
+done
+
+RC=$?
+
+rm -f $PIDFILE
+
+exit $RC
