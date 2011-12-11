@@ -40,17 +40,20 @@ pidCheck
 mkdir -p $BACKUPDIR/
 cd $BACKUPDIR/
 
+# default returnCode 0 (all OK)
 # readline by line $URL
 # skip all comments
 # convert seperator (|) to single space
 # split {name}|{url} into $0 and $1
 # wget url={0} output={1}.ics
+
+RC=0
+
 echo "$URLS" | grep -v "#" | tr '|' ' ' | while read filename url; 
 do
     wget -c --no-check-certificate "$url" -O "$filename".ics -o /dev/null
+    RC=$(($RC+$?))
 done
-
-RC=$?
 
 rm -f $PIDFILE
 
